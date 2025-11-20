@@ -4,28 +4,16 @@ import { useWallet } from '../contexts/WalletContext';
 import WalletConnectComponent from '../components/WalletConnect';
 
 const ConnectWallet = () => {
-  const { isConnected, connectWallet } = useWallet();
+  const { isConnected } = useWallet();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Redirect to home if wallet is already connected
+    // Redirect to home if wallet is connected
     if (isConnected) {
+      console.log('Wallet connected! Redirecting to home...');
       navigate('/home');
     }
   }, [isConnected, navigate]);
-
-  // Poll for connection after button click
-  useEffect(() => {
-    const checkConnection = setInterval(async () => {
-      try {
-        await connectWallet();
-      } catch (error) {
-        // Wallet not connected yet, keep polling
-      }
-    }, 2000);
-
-    return () => clearInterval(checkConnection);
-  }, [connectWallet]);
 
   return (
     <div

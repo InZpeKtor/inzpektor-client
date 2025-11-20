@@ -24,22 +24,25 @@ export function WalletProvider({ children }) {
 
   const connectWallet = async () => {
     if (!initialized) {
-      alert('Wallet kit is still initializing. Please wait a moment and try again.');
-      return;
+      console.log('Wallet kit is still initializing...');
+      throw new Error('Wallet kit not initialized');
     }
 
     try {
-      console.log('Attempting to connect wallet...');
-      
       // Get the address from the selected wallet
       const { address } = await StellarWalletsKit.getAddress();
       
-      setPublicKey(address);
-      setConnected(true);
-      console.log('Wallet connected:', address);
+      if (address && address !== publicKey) {
+        setPublicKey(address);
+        setConnected(true);
+        console.log('✅ Wallet connected successfully!');
+        console.log('Address:', address);
+      }
+      
+      return address;
     } catch (error) {
-      console.error('Error connecting wallet:', error);
-      alert('Error connecting to wallet. Please make sure you have a Stellar wallet installed (Freighter, Albedo, xBull, etc.) and try again.');
+      // Silently fail if wallet not connected yet
+      throw error;
     }
   };
 
@@ -54,6 +57,7 @@ export function WalletProvider({ children }) {
       value={{
         publicKey,
         isConnected: connected,
+        initialized,
         connectWallet,
         disconnectWallet,
       }}
