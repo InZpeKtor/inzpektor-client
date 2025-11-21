@@ -1,9 +1,46 @@
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
+import { useState, useEffect } from 'react';
 
 const Home = () => {
   const { publicKey, disconnectWallet } = useWallet();
   const navigate = useNavigate();
+  const [kycCompleted, setKycCompleted] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkKYCStatus = async () => {
+      if (!publicKey) return;
+
+      try {
+        console.log('🔍 Checking KYC status for wallet:', publicKey);
+        const response = await fetch(`http://localhost:3000/api/kyc/${publicKey}`);
+        
+        console.log('📡 Response status:', response.status);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('📊 KYC data received:', data);
+          
+          // The response structure is { kyc: { ...fields } }
+          if (data.kyc && data.kyc.kyc_process === true) {
+            console.log('✅ KYC is completed!');
+            setKycCompleted(true);
+          } else {
+            console.log('❌ KYC not completed yet');
+          }
+        } else {
+          console.log('⚠️ Response not OK, KYC probably doesn\'t exist');
+        }
+      } catch (error) {
+        console.error('❌ Error checking KYC status:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkKYCStatus();
+  }, [publicKey]);
 
   const handleDisconnect = () => {
     disconnectWallet();
@@ -80,94 +117,199 @@ const Home = () => {
           margin: '0 auto',
         }}
       >
-        {/* Welcome Card */}
-        <div
-          style={{
-            backgroundColor: 'white',
-            borderRadius: '10px',
-            padding: '40px',
-            textAlign: 'center',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-            marginBottom: '30px',
-          }}
-        >
-          <h2 style={{ fontSize: '28px', marginBottom: '20px', color: '#333' }}>
-            Welcome to InZpeKtor Dashboard
-          </h2>
-          <p style={{ fontSize: '16px', color: '#666', marginBottom: '40px' }}>
-            Your wallet is connected. Complete your KYC to unlock all functionalities.
-          </p>
-
-          {/* KYC Call to Action */}
+        {loading ? (
           <div
             style={{
-              backgroundColor: '#fff3e0',
-              border: '2px solid #ff9800',
+              backgroundColor: 'white',
               borderRadius: '10px',
-              padding: '30px',
+              padding: '40px',
+              textAlign: 'center',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+            }}
+          >
+            <p style={{ fontSize: '16px', color: '#666' }}>Loading...</p>
+          </div>
+        ) : kycCompleted ? (
+          /* Dashboard with Score */
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '10px',
+              padding: '40px',
+              textAlign: 'center',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
               marginBottom: '30px',
             }}
           >
-            <h3 style={{ fontSize: '24px', marginBottom: '15px', color: '#e65100' }}>
-              🔒 Complete KYC to have all functionalities
-            </h3>
-            <p style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>
-              Complete the KYC process to access the full ZK Clean Hands Verification system
-            </p>
-            <button
-              onClick={handleCompleteKYC}
+            <h2 style={{ fontSize: '28px', marginBottom: '20px', color: '#333' }}>
+              Dashboard
+            </h2>
+            
+            {/* Score Card */}
+            <div
               style={{
-                padding: '15px 40px',
-                fontSize: '18px',
-                fontWeight: 'bold',
-                backgroundColor: '#ff9800',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                transition: 'all 0.3s ease',
-              }}
-              onMouseOver={(e) => {
-                e.target.style.backgroundColor = '#f57c00';
-              }}
-              onMouseOut={(e) => {
-                e.target.style.backgroundColor = '#ff9800';
+                backgroundColor: '#e8f5e9',
+                border: '3px solid #4caf50',
+                borderRadius: '15px',
+                padding: '60px 40px',
+                margin: '20px auto',
+                maxWidth: '600px',
+                boxShadow: '0 4px 12px rgba(76, 175, 80, 0.2)',
               }}
             >
-              Start KYC Process
-            </button>
-          </div>
+              <div
+                style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  color: '#2e7d32',
+                  marginBottom: '20px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                }}
+              >
+                Your Score
+              </div>
+              <div
+                style={{
+                  fontSize: '120px',
+                  fontWeight: 'bold',
+                  color: '#4caf50',
+                  lineHeight: '1',
+                  marginBottom: '10px',
+                }}
+              >
+                100
+              </div>
+              <div
+                style={{
+                  fontSize: '16px',
+                  color: '#66bb6a',
+                  fontWeight: '500',
+                }}
+              >
+                ✓ KYC Verified
+              </div>
+            </div>
 
-          {/* Info Cards */}
+            {/* Status Indicators */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                gap: '20px',
+                marginTop: '40px',
+              }}
+            >
+              <div style={{ padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+                <h4 style={{ fontSize: '18px', marginBottom: '10px' }}>✓ KYC Verification</h4>
+                <p style={{ fontSize: '14px', color: '#4caf50', fontWeight: 'bold' }}>
+                  Completed
+                </p>
+              </div>
+              <div style={{ padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+                <h4 style={{ fontSize: '18px', marginBottom: '10px' }}>✓ OFAC Screening</h4>
+                <p style={{ fontSize: '14px', color: '#4caf50', fontWeight: 'bold' }}>
+                  Verified
+                </p>
+              </div>
+              <div style={{ padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+                <h4 style={{ fontSize: '18px', marginBottom: '10px' }}>✓ ZK Proof</h4>
+                <p style={{ fontSize: '14px', color: '#4caf50', fontWeight: 'bold' }}>
+                  Active
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Welcome Card with KYC CTA */
           <div
             style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-              gap: '20px',
-              marginTop: '30px',
+              backgroundColor: 'white',
+              borderRadius: '10px',
+              padding: '40px',
+              textAlign: 'center',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+              marginBottom: '30px',
             }}
           >
-            <div style={{ padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
-              <h4 style={{ fontSize: '18px', marginBottom: '10px' }}>🔐 KYC Verification</h4>
-              <p style={{ fontSize: '14px', color: '#666' }}>
-                Complete identity verification with proof of life
+            <h2 style={{ fontSize: '28px', marginBottom: '20px', color: '#333' }}>
+              Welcome to InZpeKtor Dashboard
+            </h2>
+            <p style={{ fontSize: '16px', color: '#666', marginBottom: '40px' }}>
+              Your wallet is connected. Complete your KYC to unlock all functionalities.
+            </p>
+
+            {/* KYC Call to Action */}
+            <div
+              style={{
+                backgroundColor: '#fff3e0',
+                border: '2px solid #ff9800',
+                borderRadius: '10px',
+                padding: '30px',
+                marginBottom: '30px',
+              }}
+            >
+              <h3 style={{ fontSize: '24px', marginBottom: '15px', color: '#e65100' }}>
+                🔒 Complete KYC to have all functionalities
+              </h3>
+              <p style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>
+                Complete the KYC process to access the full ZK Clean Hands Verification system
               </p>
+              <button
+                onClick={handleCompleteKYC}
+                style={{
+                  padding: '15px 40px',
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  backgroundColor: '#ff9800',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                  transition: 'all 0.3s ease',
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.backgroundColor = '#f57c00';
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.backgroundColor = '#ff9800';
+                }}
+              >
+                Start KYC Process
+              </button>
             </div>
-            <div style={{ padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
-              <h4 style={{ fontSize: '18px', marginBottom: '10px' }}>✓ OFAC Screening</h4>
-              <p style={{ fontSize: '14px', color: '#666' }}>
-                Automatic verification against sanctions lists
-              </p>
-            </div>
-            <div style={{ padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
-              <h4 style={{ fontSize: '18px', marginBottom: '10px' }}>🔒 ZK Proof</h4>
-              <p style={{ fontSize: '14px', color: '#666' }}>
-                Generate zero-knowledge proof attestation
-              </p>
+
+            {/* Info Cards */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                gap: '20px',
+                marginTop: '30px',
+              }}
+            >
+              <div style={{ padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+                <h4 style={{ fontSize: '18px', marginBottom: '10px' }}>🔐 KYC Verification</h4>
+                <p style={{ fontSize: '14px', color: '#666' }}>
+                  Complete identity verification with proof of life
+                </p>
+              </div>
+              <div style={{ padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+                <h4 style={{ fontSize: '18px', marginBottom: '10px' }}>✓ OFAC Screening</h4>
+                <p style={{ fontSize: '14px', color: '#666' }}>
+                  Automatic verification against sanctions lists
+                </p>
+              </div>
+              <div style={{ padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+                <h4 style={{ fontSize: '18px', marginBottom: '10px' }}>🔒 ZK Proof</h4>
+                <p style={{ fontSize: '14px', color: '#666' }}>
+                  Generate zero-knowledge proof attestation
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
